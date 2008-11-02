@@ -6,3 +6,86 @@
 # Richard Crowley <r@rcrowley.org>
 #
 
+
+
+# Write the .mixinstall file
+function write_mixinstall($project, $repository) {
+	if (!($project && $repository)) { return false; }
+	$file = git_root() . '/.mixinstall';
+	if (!is_writable($file)) { return false; }
+	$projects = parse_mixinstall();
+	if (!is_array($projects)) { $projects = array(); }
+	$projects[$project] = $repository;
+	$fp = fopen($file, 'w');
+	if (!$fp) { return false; }
+	foreach ($projects as $proj => $repo) { fwrite($fp, "$proj $repo\n"); }
+	fclose($fp);
+	return true;
+}
+
+# Write the .gitignorefile
+function write_gitignore($project, $files) {
+	if (!($project && is_array($files))) { return false; }
+	$file = git_root() . '/.gitignore';
+	if (!is_writable($file)) { return false; }
+	$projects = parse_gitignore();
+	if (!is_array($projects)) { $projects = array(); }
+	$projects[$project] = $files;
+	$fp = fopen($file, 'w');
+	if (!$fp) { return false; }
+	if (isset($projects[''])) {
+		foreach ($projects[''] as $f) { fwrite($fp, "$f\n"); }
+		unset($projects['']);
+	}
+	foreach ($projects as $proj => $files) {
+		fwrite($fp, "\n#### Mixed project: $proj ####\n");
+		foreach ($files as $f) { fwrite($fp, "$f\n"); }
+		fwrite($fp, "####\n");
+	}
+	fclose($fp);
+	return true;
+}
+
+# Parse the .mixinstall file
+function parse_mixinstall($project = false) {
+	$file = git_root() . '/.mixinstall';
+	if (!is_readable($file)) { return false; }
+	$lines = explode("\n", file_get_contents($file));
+	$projects = array();
+	foreach ($lines as $line) {
+		if (!$line) { continue; }
+		list($proj, $repo) = explode(' ', $line);
+		$projects[$proj] = $repo;
+	}
+	if ($project) {
+		return isset($projects[$project]) ? $projects[$project] : false;
+	} else { return $projects; }
+}
+
+# Parse the .gitignore file
+function parse_gitignore($project = false) {
+	$file = git_root() . '/.gitignore';
+	if (!is_readable($file)) { return false; }
+	$lines = explode("\n", file_get_contents($file));
+	$projects = array();
+	$proj = false;
+	foreach ($lines as $line) {
+		if (!$line) { continue; }
+		if (preg_match('!^#### Mixed project: (\S+) ####$!', $line, $m)) {
+			$proj = $m[1];
+		} else if (preg_match('!^####$!', $line)) { $proj = false; }
+		else if ($proj) { $projects[$proj][] = $line; }
+		else { $projects[''][] = $line; }
+	}
+	if ($project) {
+		return isset($projects[$project]) ? $projects[$project] : false;
+	} else { return $projects; }
+}
+
+# Find the repository's root directory
+#   TODO: What if there's no .git in any parent?
+function git_root() {
+	$dir = getcwd();
+	while (!is_dir("$dir/.git")) { $dir = dirname($dir); }
+	return $dir;
+}

@@ -9,7 +9,16 @@ Default to /tmp/<project> for staging
 mixinstall init [<project>] [--git|--svn] <url> [<base>]
 	Figure out <project> from URL if not given
 	<base> is relative to the repo root
+mixinstall clone [<project>] [--git|--svn] <url> [<base>]
+	Does an init and then an update
 mixinstall up|update [<project>]
 mixinstall rm|remove <project>
 
 For init and update, fail if any mixed file would overwrite one in the main project
+
+Would be cool to do diffs of mixed files if the user has changed them
+
+Automatically add and commit .gitignore and .mixinstall after update?
+	Have to be careful if the user has stuff in the index
+	Maybe a --commit option?
+	Could also just require repo to be clean before doing any mixinstalls
