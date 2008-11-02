@@ -1,0 +1,20 @@
+Use a .mixinstall file level with .gitignore to track already mixed projects
+
+Use special named sections in .gitignore to note every file that is part of a mixed project
+
+Default to the --git argument but accept --svn to control how the mixed project is downloaded
+
+Default to /tmp/<project> for staging
+
+**********************
+How will all of these ignored files do with branching?
+	We may have to list the files in .mixinstall and actually commit them
+**********************
+
+mixinstall init [<project>] [--git|--svn] <url> [<base>]
+	Figure out <project> from URL if not given
+	<base> is relative to the repo root
+mixinstall up|update [<project>]
+mixinstall rm|remove <project>
+
+For init and update, fail if any mixed file would overwrite one in the main project
