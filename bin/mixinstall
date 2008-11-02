@@ -6,31 +6,118 @@
 # Richard Crowley <r@rcrowley.org>
 #
 
+switch (@$argv[1]) {
+
+	# mixinstall init|clone <project> <repository> [<base>]
+	case 'init':
+	case 'clone':
+		$base = '';
+		switch (sizeof($argv)) {
+			case 5:
+				$base = $argv[4];
+			case 4:
+				$project = $argv[2];
+				$repository = $argv[3];
+			break;
+			default:
+				die("[mixinstall] bad arguments\n");
+		}
+		mixinstall_init($project, $repository, $base);
+		if ('clone' == $argv[1]) { mixinstall_update($project); }
+	break;
+
+	# mixinstall update|up [<project>]
+	case 'update':
+	case 'up':
+		switch (sizeof($argv)) {
+			case 3:
+				mixinstall_update($argv[2]);
+			break;
+			case 2:
+				mixinstall_update();
+			break;
+			default:
+				die("[mixinstall] bad arguments\n");
+		}
+	break;
+
+	# mixinstall remove|rm <project>
+	case 'remove':
+	case 'rm':
+		if (3 != sizeof($argv)) {
+			die("[mixinstall] you have to give a project to remove\n");
+		}
+		mixinstall_remove($argv[2]);
+	break;
+
+	default:
+		die("[mixinstall] unknown command {$argv[1]}\n");
+}
 
 
-# Write the .mixinstall file
-function write_mixinstall($project, $repository) {
-	if (!($project && $repository)) { return false; }
+
+function mixinstall_init($project, $repository, $base = '') {
+	if (parse_mixinstall($project)) {
+		die("[mixinstall] project $project already exists\n");
+	}
+	$base = substr(realpath($base), 1 + strlen(git_root()));
+	write_mixinstall($project, $repository, $base);
+	write_gitignore($project, array());
+}
+
+function mixinstall_update($project = false) {
+	if ($project) {
+		$repo = parse_mixinstall($project);
+		if (!$repo) {
+			die("[mixinstall] project $project doesn't exist\n");
+		}
+		$projects = array($project => $repo);
+	} else {
+		$projects = parse_mixinstall();
+		if (!$projects) {
+			die("[mixinstall] no projects\n");
+		}
+	}
+	foreach ($projects as $project => $tmp) {
+		list($repo, $base) = $tmp;
+		# TODO: Actually update $repository
+	}
+}
+
+function mixinstall_remove($project) {
+	$files = parse_gitignore($project);
+	# TODO: Remove everything in $files
+	write_mixinstall($project, false);
+	write_gitignore($project, false);
+}
+
+
+
+function write_mixinstall($project, $repository, $base = '') {
+	if (!$project) { return false; }
 	$file = git_root() . '/.mixinstall';
-	if (!is_writable($file)) { return false; }
+	if (file_exists($file) && !is_writable($file)) { return false; }
 	$projects = parse_mixinstall();
 	if (!is_array($projects)) { $projects = array(); }
-	$projects[$project] = $repository;
+	if ($repository) { $projects[$project] = array($repository, $base); }
+	else { unset($projects[$project]); }
 	$fp = fopen($file, 'w');
 	if (!$fp) { return false; }
-	foreach ($projects as $proj => $repo) { fwrite($fp, "$proj $repo\n"); }
+	foreach ($projects as $proj => $tmp) {
+		list($repo, $base) = $tmp;
+		fwrite($fp, "$proj $repo $base\n"); }
 	fclose($fp);
 	return true;
 }
 
-# Write the .gitignorefile
 function write_gitignore($project, $files) {
-	if (!($project && is_array($files))) { return false; }
+	if (!$project) { return false; }
 	$file = git_root() . '/.gitignore';
-	if (!is_writable($file)) { return false; }
+	if (file_exists($file) && !is_writable($file)) { return false; }
 	$projects = parse_gitignore();
 	if (!is_array($projects)) { $projects = array(); }
-	$projects[$project] = $files;
+	if (is_array($files)) { $projects[$project] = $files; }
+	else { unset($projects[$project]); }
 	$fp = fopen($file, 'w');
 	if (!$fp) { return false; }
 	if (isset($projects[''])) {
@@ -46,7 +133,6 @@ function write_gitignore($project, $files) {
 	return true;
 }
 
-# Parse the .mixinstall file
 function parse_mixinstall($project = false) {
 	$file = git_root() . '/.mixinstall';
 	if (!is_readable($file)) { return false; }
@@ -54,15 +140,14 @@ function parse_mixinstall($project = false) {
 	$projects = array();
 	foreach ($lines as $line) {
 		if (!$line) { continue; }
-		list($proj, $repo) = explode(' ', $line);
-		$projects[$proj] = $repo;
+		list($proj, $repo, $base) = explode(' ', $line);
+		$projects[$proj] = array($repo, $base);
 	}
 	if ($project) {
 		return isset($projects[$project]) ? $projects[$project] : false;
 	} else { return $projects; }
 }
 
-# Parse the .gitignore file
 function parse_gitignore($project = false) {
 	$file = git_root() . '/.gitignore';
 	if (!is_readable($file)) { return false; }
@@ -82,10 +167,9 @@ function parse_gitignore($project = false) {
 	} else { return $projects; }
 }
 
-# Find the repository's root directory
-#   TODO: What if there's no .git in any parent?
+# TODO: What if there's no .git in any parent?
 function git_root() {
-	$dir = getcwd();
+	$dir = realpath(getcwd());
 	while (!is_dir("$dir/.git")) { $dir = dirname($dir); }
-	return $dir;
+	return realpath($dir);
 }

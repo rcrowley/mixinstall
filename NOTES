@@ -6,10 +6,10 @@ Default to the --git argument but accept --svn to control how the mixed project 
 
 Default to /tmp/<project> for staging
 
-mixinstall init [<project>] [--git|--svn] <url> [<base>]
+mixinstall init <project> [--git|--svn] <url> [<base>]
 	Figure out <project> from URL if not given
 	<base> is relative to the repo root
-mixinstall clone [<project>] [--git|--svn] <url> [<base>]
+mixinstall clone <project> [--git|--svn] <url> [<base>]
 	Does an init and then an update
 mixinstall up|update [<project>]
 mixinstall rm|remove <project>
