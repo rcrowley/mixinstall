@@ -158,6 +158,7 @@ function parse_gitignore($project = false) {
 		if (!$line) { continue; }
 		if (preg_match('!^#### Mixed project: (\S+) ####$!', $line, $m)) {
 			$proj = $m[1];
+			$projects[$proj] = array();
 		} else if (preg_match('!^####$!', $line)) { $proj = false; }
 		else if ($proj) { $projects[$proj][] = $line; }
 		else { $projects[''][] = $line; }
