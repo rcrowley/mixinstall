@@ -22,7 +22,7 @@ switch (@$argv[1]) {
 			default:
 				die("[mixinstall] bad arguments\n");
 		}
-		mixinstall_init($project, $repository, $base);
+		mixinstall_init($project, 'git', $repository, $base);
 		if ('clone' == $argv[1]) { mixinstall_update($project); }
 	break;
 
@@ -56,12 +56,12 @@ switch (@$argv[1]) {
 
 
 
-function mixinstall_init($project, $repository, $base = '') {
+function mixinstall_init($project, $scm, $repository, $base) {
 	if (parse_mixinstall($project)) {
 		die("[mixinstall] project $project already exists\n");
 	}
 	$base = substr(realpath($base), 1 + strlen(git_root()));
-	write_mixinstall($project, $repository, $base);
+	write_mixinstall($project, $scm, $repository, $base);
 	write_gitignore($project, array());
 }
 
@@ -79,7 +79,7 @@ function mixinstall_update($project = false) {
 		}
 	}
 	foreach ($projects as $project => $tmp) {
-		list($repo, $base) = $tmp;
+		list($scm, $repo, $base) = $tmp;
 		# TODO: Actually update $repository
 	}
 }
@@ -93,19 +93,19 @@ function mixinstall_remove($project) {
 
 
 
-function write_mixinstall($project, $repository, $base = '') {
+function write_mixinstall($project, $scm, $repository, $base) {
 	if (!$project) { return false; }
 	$file = git_root() . '/.mixinstall';
 	if (file_exists($file) && !is_writable($file)) { return false; }
 	$projects = parse_mixinstall();
 	if (!is_array($projects)) { $projects = array(); }
-	if ($repository) { $projects[$project] = array($repository, $base); }
+	if ($repository) { $projects[$project] = array($scm, $repository, $base); }
 	else { unset($projects[$project]); }
 	$fp = fopen($file, 'w');
 	if (!$fp) { return false; }
 	foreach ($projects as $proj => $tmp) {
-		list($repo, $base) = $tmp;
-		fwrite($fp, "$proj $repo $base\n"); }
+		list($scm, $repo, $base) = $tmp;
+		fwrite($fp, "$proj $scm $repo $base\n"); }
 	fclose($fp);
 	return true;
 }
@@ -140,8 +140,8 @@ function parse_mixinstall($project = false) {
 	$projects = array();
 	foreach ($lines as $line) {
 		if (!$line) { continue; }
-		list($proj, $repo, $base) = explode(' ', $line);
-		$projects[$proj] = array($repo, $base);
+		list($proj, $scm, $repo, $base) = explode(' ', $line);
+		$projects[$proj] = array($scm, $repo, $base);
 	}
 	if ($project) {
 		return isset($projects[$project]) ? $projects[$project] : false;
