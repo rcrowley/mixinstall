@@ -6,11 +6,6 @@ Default to the --git argument but accept --svn to control how the mixed project 
 
 Default to /tmp/<project> for staging
 
-**********************
-How will all of these ignored files do with branching?
-	We may have to list the files in .mixinstall and actually commit them
-**********************
-
 mixinstall init [<project>] [--git|--svn] <url> [<base>]
 	Figure out <project> from URL if not given
 	<base> is relative to the repo root
