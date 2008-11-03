@@ -93,7 +93,9 @@ function mixinstall_update($project = false) {
 				}
 				$new_files = array();
 				foreach (flatten(rscandir("/tmp/$project")) as $f) {
-					if ('.git/' != substr($f, 0, 5)) { $new_files[] = $f; }
+					if ('.git' == substr($f, 0, 4)) { continue; }
+					if ('README' == $f) { continue; }
+					$new_files[] = $f;
 				}
 			break;
 			default:
