@@ -50,6 +50,12 @@ switch (@$argv[1]) {
 		mixinstall_remove($argv[2]);
 	break;
 
+	# mixinstall list|ls
+	case 'list':
+	case 'ls':
+		mixinstall_list();
+	break;
+
 	default:
 		die("[mixinstall] unknown command {$argv[1]}\n");
 }
@@ -141,6 +147,15 @@ function mixinstall_remove($project) {
 	# TODO: Remove everything in $files
 	write_mixinstall($project, false);
 	write_gitignore($project, false);
+}
+
+function mixinstall_list() {
+	$projects = parse_mixinstall();
+	if (!is_array($projects)) { $projects = array(); }
+	foreach ($projects as $project => $tmp) {
+		list($scm, $repo, $base) = $tmp;
+		echo "$project at ./$base\n\t$repo ($scm)\n";
+	}
 }
 
 
