@@ -274,10 +274,15 @@ function parse_gitignore($project = false) {
 	} else { return $projects; }
 }
 
-# TODO: What if there's no .git in any parent?
 function git_root() {
-	$dir = realpath(getcwd());
-	while (!is_dir("$dir/.git")) { $dir = dirname($dir); }
+	$dir = getcwd();
+	while (!is_dir("$dir/.git")) {
+		$tmp = dirname($dir);
+		if ($tmp == $dir) {
+			die("[mixinstall] not a Git repository\n");
+		}
+		$dir = $tmp;
+	}
 	return realpath($dir);
 }
 
