@@ -1,21 +1,30 @@
 NAME
-	Mixinstall
+	Mixinstall -- Manage read-only "mixed projects" within your own
 
 SYNOPSIS
+	mixinstall init|clone <project> <repository> [<base>]
+	mixinstall update|up [<project>]
+	mixinstall remove|rm <project>
+	mixinstall list|ls [<project>]
 
 DESCRIPTION
-	Starting a new project often involves checking out several open
-	source projects that will serve as the base of your project.
-	This usually becomes a nightmare that gets scarier when you try
-	to update one of those base projects.  Mixinstall aims to manage
-	that process for you.
+	Manages read-only "mixed projects" in the same directory tree as your
+	project.  Enables you to track the head of one or more other Git
+	repositories without polluting your own.  Mixinstall explicitly doesn't
+	support directly modifying a mixed project.
+
+	Mixinstall was written in the spirit of small pieces, loosely joined.
 
 INSTALLATION
+	Checkout or download Mixinstall and run `sudo make install`.
+
+	$ mkdir mixinstall ; cd mixinstall
+	$ git clone git://github.com/rcrowley/mixinstall.git
+	$ sudo make install
 
 DEPENDENCIES
 	PHP 5 <http://php.net/>
 	Git <http://git-scm.com/>
-	Subversion <http://subversion.tigris.org/>
 
 VERSION
 	0.1
@@ -27,6 +36,7 @@ AUTHOR
 	Richard Crowley <r@rcrowley.org>
 
 SEE ALSO
+	<http://www.kernel.org/pub/software/scm/git-core/docs/git-submodule.html>
 
 LICENSE
 	This work is licensed under a Creative Commons
