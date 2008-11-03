@@ -11,7 +11,7 @@ switch (@$argv[1]) {
 	# mixinstall init|clone <project> <repository> [<base>]
 	case 'init':
 	case 'clone':
-		$base = '';
+		$base = '.';
 		switch (sizeof($argv)) {
 			case 5:
 				$base = $argv[4];
@@ -60,7 +60,7 @@ function mixinstall_init($project, $scm, $repository, $base) {
 	if (parse_mixinstall($project)) {
 		die("[mixinstall] project $project already exists\n");
 	}
-	$base = substr(realpath($base), 1 + strlen(git_root()));
+	$base = '.' . substr(realpath($base), strlen(git_root()));
 	write_mixinstall($project, $scm, $repository, $base);
 	write_gitignore($project, array());
 }
@@ -80,7 +80,55 @@ function mixinstall_update($project = false) {
 	}
 	foreach ($projects as $project => $tmp) {
 		list($scm, $repo, $base) = $tmp;
-		# TODO: Actually update $repository
+
+		# Checkout the project and create a list of files to be mixed
+		switch ($scm) {
+			case 'git':
+				passthru("git clone $repo /tmp/$project", $status);
+				if ($status) {
+					echo "[mixinstall] git-clone returned $status\n";
+					passthru("rm -rf /tmp/$project");
+					continue;
+				}
+				$new_files = array();
+				foreach (flatten(rscandir("/tmp/$project")) as $f) {
+					if ('.git/' != substr($f, 0, 5)) { $new_files[] = $f; }
+				}
+			break;
+			default:
+				echo "[mixinstall] $scm is not supported\n";
+				continue;
+		}
+
+		# Check that we won't overwrite any files outside of the mixinstall
+		#   Tsk tsk this is O(n^2)
+		$old_files = parse_gitignore($project);
+		if (!is_array($old_files)) { $old_files = array(); }
+		$dirty = false;
+		foreach ($new_files as $f) {
+			if (!in_array("$base/$f", $old_files) && file_exists("$base/$f")) {
+				echo "[mixinstall] $base/$f exists and is not a mixed file\n";
+				$dirty = true;
+			}
+		}
+		if ($dirty) {
+			passthru("rm -rf /tmp/$project");
+			continue;
+		}
+
+		# Mix the files
+		$files = array();
+		foreach ($new_files as $f) {
+			@mkdir(dirname("$base/$f"), 0755, true);
+			if (!rename("/tmp/$project/$f", "$base/$f")) {
+				echo "[mixinstall] error renaming ",
+					"/tmp/$project/$f to $base/$f\n";
+			}
+			$files[] = "$base/$f";
+		}
+		write_gitignore($project, $files);
+
+		passthru("rm -rf /tmp/$project");
 	}
 }
 
@@ -173,4 +221,26 @@ function git_root() {
 	$dir = realpath(getcwd());
 	while (!is_dir("$dir/.git")) { $dir = dirname($dir); }
 	return realpath($dir);
+}
+
+function rscandir($dir) {
+	$files = scandir($dir);
+	$out = array();
+	foreach ($files as $f) {
+		if ('.' == $f || '..' == $f) { continue; }
+		$out[$f] = is_dir("$dir/$f") ? rscandir("$dir/$f") : false;
+	}
+	return $out;
+}
+
+# Flatten a tree into a one-dimensional list
+function flatten($tree, $delim = '/') {
+	$out = array();
+	foreach ($tree as $k => $v) {
+		if (is_array($v)) {
+			$subtree = flatten($v, $delim);
+			foreach ($subtree as $v) { $out[] = "$k$delim$v"; }
+		} else { $out[] = $k; }
+	}
+	return $out;
 }
