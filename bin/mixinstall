@@ -11,7 +11,7 @@ switch (@$argv[1]) {
 	# mixinstall init|clone <project> <repository> [<base>]
 	case 'init':
 	case 'clone':
-		$base = '.';
+		$base = '';
 		switch (sizeof($argv)) {
 			case 5:
 				$base = $argv[4];
@@ -60,7 +60,7 @@ function mixinstall_init($project, $scm, $repository, $base) {
 	if (parse_mixinstall($project)) {
 		die("[mixinstall] project $project already exists\n");
 	}
-	$base = '.' . substr(realpath($base), strlen(git_root()));
+	$base = substr(realpath($base), 1 + strlen(git_root()));
 	write_mixinstall($project, $scm, $repository, $base);
 	write_gitignore($project, array());
 }
@@ -80,6 +80,7 @@ function mixinstall_update($project = false) {
 	}
 	foreach ($projects as $project => $tmp) {
 		list($scm, $repo, $base) = $tmp;
+		if ($base) { $base .= '/'; }
 
 		# Checkout the project and create a list of files to be mixed
 		switch ($scm) {
@@ -106,8 +107,8 @@ function mixinstall_update($project = false) {
 		if (!is_array($old_files)) { $old_files = array(); }
 		$dirty = false;
 		foreach ($new_files as $f) {
-			if (!in_array("$base/$f", $old_files) && file_exists("$base/$f")) {
-				echo "[mixinstall] $base/$f exists and is not a mixed file\n";
+			if (!in_array("$base$f", $old_files) && file_exists("$base$f")) {
+				echo "[mixinstall] $base$f exists and is not a mixed file\n";
 				$dirty = true;
 			}
 		}
@@ -119,12 +120,12 @@ function mixinstall_update($project = false) {
 		# Mix the files
 		$files = array();
 		foreach ($new_files as $f) {
-			@mkdir(dirname("$base/$f"), 0755, true);
-			if (!rename("/tmp/$project/$f", "$base/$f")) {
+			@mkdir(dirname("$base$f"), 0755, true);
+			if (!rename("/tmp/$project/$f", "$base$f")) {
 				echo "[mixinstall] error renaming ",
-					"/tmp/$project/$f to $base/$f\n";
+					"/tmp/$project/$f to $base$f\n";
 			}
-			$files[] = "$base/$f";
+			$files[] = "$base$f";
 		}
 		write_gitignore($project, $files);
 
@@ -132,6 +133,7 @@ function mixinstall_update($project = false) {
 	}
 }
 
+# TODO: Broken b/c of expanded write_mixinstall arguments
 function mixinstall_remove($project) {
 	$files = parse_gitignore($project);
 	# TODO: Remove everything in $files
