@@ -141,7 +141,6 @@ function mixinstall_update($project = false) {
 	}
 }
 
-# TODO: Broken b/c of expanded write_mixinstall arguments
 function mixinstall_remove($project) {
 	$files = parse_gitignore($project);
 	# TODO: Remove everything in $files
@@ -160,13 +159,13 @@ function mixinstall_list() {
 
 
 
-function write_mixinstall($project, $scm, $repository, $base) {
+function write_mixinstall($project, $scm, $repository = false, $base = false) {
 	if (!$project) { return false; }
 	$file = git_root() . '/.mixinstall';
 	if (file_exists($file) && !is_writable($file)) { return false; }
 	$projects = parse_mixinstall();
 	if (!is_array($projects)) { $projects = array(); }
-	if ($repository) { $projects[$project] = array($scm, $repository, $base); }
+	if ($scm) { $projects[$project] = array($scm, $repository, $base); }
 	else { unset($projects[$project]); }
 	$fp = fopen($file, 'w');
 	if (!$fp) { return false; }
