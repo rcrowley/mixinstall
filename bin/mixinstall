@@ -51,10 +51,11 @@ switch (@$argv[1]) {
 		mixinstall_remove($argv[2]);
 	break;
 
-	# mixinstall list|ls
+	# mixinstall list|ls [<project>]
 	case 'list':
 	case 'ls':
-		mixinstall_list();
+		if (isset($argv[2])) { mixinstall_list($argv[2]); }
+		else{ mixinstall_list(); }
 	break;
 
 	default:
@@ -172,12 +173,27 @@ function mixinstall_remove($project) {
 	write_gitignore($project, false);
 }
 
-function mixinstall_list() {
-	$projects = parse_mixinstall();
-	if (!is_array($projects)) { $projects = array(); }
-	foreach ($projects as $project => $tmp) {
+function mixinstall_list($project = false) {
+	if ($project) {
+		$tmp = parse_mixinstall($project);
+		if (!is_array($tmp)) {
+			die("[mixinstall] project $project doesn't exist\n");
+		}
 		list($scm, $repo, $base) = $tmp;
-		echo "$project at ./$base\n\t$repo ($scm)\n";
+		if (!$base) { $base = '.'; }
+		echo "[mixinstall] $project at $base\n[mixinstall]   $repo ($scm)\n";
+		$files = parse_gitignore($project);
+		if (!is_array($files)) { $files = array(); }
+		foreach ($files as $f) { echo "[mixinstall]     $f\n"; }
+	} else {
+		$projects = parse_mixinstall();
+		if (!is_array($projects)) { $projects = array(); }
+		foreach ($projects as $project => $tmp) {
+			list($scm, $repo, $base) = $tmp;
+			if (!$base) { $base = '.'; }
+			echo "[mixinstall] $project at $base\n",
+				"[mixinstall]   $repo ($scm)\n";
+		}
 	}
 }
 
