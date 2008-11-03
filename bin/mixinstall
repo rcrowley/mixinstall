@@ -11,17 +11,18 @@ switch (@$argv[1]) {
 	# mixinstall init|clone <project> <repository> [<base>]
 	case 'init':
 	case 'clone':
-		$base = '';
-		switch (sizeof($argv)) {
-			case 5:
-				$base = $argv[4];
-			case 4:
-				$project = $argv[2];
-				$repository = $argv[3];
-			break;
-			default:
-				die("[mixinstall] bad arguments\n");
+		if (!isset($argv[2]) || !preg_match('!^[a-z0-9_-]+$!i', $argv[2])) {
+			die("[mixinstall] {$argv[2]} is not a valid project name\n");
 		}
+		$project = $argv[2];
+		if (!isset($argv[3]) || !preg_match('!^[a-z0-9+]+://!i', $argv[3])) {
+			die("[mixinstall] {$argv[3]} is not a valid repository URL\n");
+		}
+		$repository = $argv[3];
+		if (isset($argv[4]) && !preg_match('!^[a-z0-9_/-]+$!i', $argv[4])) {
+			die("[mixinstall] {$argv[4]} is not a valid project name\n");
+		}
+		$base = @$argv[4];
 		mixinstall_init($project, 'git', $repository, $base);
 		if ('clone' == $argv[1]) { mixinstall_update($project); }
 	break;
