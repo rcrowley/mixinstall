@@ -143,7 +143,30 @@ function mixinstall_update($project = false) {
 
 function mixinstall_remove($project) {
 	$files = parse_gitignore($project);
-	# TODO: Remove everything in $files
+	if (!is_array($files)) {
+		die("[mixinstall] project $project doesn't exist (1)\n");
+	}
+	foreach ($files as $f) { unlink($f); }
+	$proj = parse_mixinstall($project);
+	if (!is_array($proj)) {
+		die("[mixinstall] project $project doesn't exist (2)\n");
+	}
+	$base = $proj[2];
+	if ($base) { $base .= '/'; }
+	$base_len = strlen($base);
+	foreach ($files as $i => $f) {
+		$files[$i] = dirname(substr($f, $base_len));
+	}
+	do {
+		$again = false;
+		foreach ($files as $i => $f) {
+			if ('.' == $f) { continue; }
+			if (@rmdir("$base$f")) {
+				$files[$i] = dirname($f);
+				$again = true;
+			}
+		}
+	} while ($again);
 	write_mixinstall($project, false);
 	write_gitignore($project, false);
 }
@@ -240,6 +263,8 @@ function git_root() {
 	while (!is_dir("$dir/.git")) { $dir = dirname($dir); }
 	return realpath($dir);
 }
+
+
 
 function rscandir($dir) {
 	$files = scandir($dir);
