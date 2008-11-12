@@ -95,8 +95,11 @@ function mixinstall_update($project = false) {
 	}
 	foreach ($projects as $project => $tmp) {
 		list($scm, $repo, $base) = $tmp;
-		$base = realpath(git_root() . "/$base") . '/';
-		@mkdir($base, 0755, true);
+
+		# Make sure the root of this mixinstall exists
+		$root = git_root();
+		@mkdir("$root/$base", 0755, true);
+		if ($base) { $base .= '/'; }
 
 		# Checkout the project and create a list of files to be mixed
 		switch ($scm) {
@@ -125,7 +128,8 @@ function mixinstall_update($project = false) {
 		if (!is_array($old_files)) { $old_files = array(); }
 		$dirty = false;
 		foreach ($new_files as $f) {
-			if (!in_array("$base$f", $old_files) && file_exists("$base$f")) {
+			if (!in_array("$base$f", $old_files)
+				&& file_exists("$root/$base$f")) {
 				echo "[mixinstall] $base$f exists and is not a mixed file\n";
 				$dirty = true;
 			}
@@ -138,10 +142,10 @@ function mixinstall_update($project = false) {
 		# Mix the files
 		$files = array();
 		foreach ($new_files as $f) {
-			@mkdir(dirname("$base$f"), 0755, true);
-			if (!rename("/tmp/$project/$f", "$base$f")) {
+			@mkdir(dirname("$root/$base$f"), 0755, true);
+			if (!rename("/tmp/$project/$f", "$root/$base$f")) {
 				echo "[mixinstall] error renaming ",
-					"/tmp/$project/$f to $base$f\n";
+					"/tmp/$project/$f to $root/$base$f\n";
 			}
 			$files[] = "$base$f";
 		}
