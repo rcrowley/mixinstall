@@ -59,7 +59,13 @@ switch (@$argv[1]) {
 	break;
 
 	default:
-		die("[mixinstall] unknown command {$argv[1]}\n");
+		echo "[mixinstall] unknown command {$argv[1]}\n",
+			"[mixinstall] available commands:\n",
+			"[mixinstall]   init|clone <project> <repository> [<base>]\n",
+			"[mixinstall]   update|up [<project>]\n",
+			"[mixinstall]   remove|rm <project>\n",
+			"[mixinstall]   list|ls [<project>]\n";
+		exit(1);
 }
 
 
