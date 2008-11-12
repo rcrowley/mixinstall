@@ -74,6 +74,7 @@ function mixinstall_init($project, $scm, $repository, $base) {
 	if (parse_mixinstall($project)) {
 		die("[mixinstall] project $project already exists\n");
 	}
+	@mkdir($base, 0755, true);
 	$base = substr(realpath($base), 1 + strlen(git_root()));
 	write_mixinstall($project, $scm, $repository, $base);
 	write_gitignore($project, array());
@@ -94,7 +95,8 @@ function mixinstall_update($project = false) {
 	}
 	foreach ($projects as $project => $tmp) {
 		list($scm, $repo, $base) = $tmp;
-		if ($base) { $base .= '/'; }
+		$base = realpath(git_root() . "/$base") . '/';
+		@mkdir($base, 0755, true);
 
 		# Checkout the project and create a list of files to be mixed
 		switch ($scm) {
